@@ -1,4 +1,6 @@
 import java.io.*;
+import java.util.Arrays;
+import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -21,51 +23,53 @@ public class Main {
     static File iconsDir = new File(resDir.getPath() + "/icons");
 
     static File saveGamesDir = new File(gameDirectory.getPath() + "/saveGames");
-    static File saveGamesDoc = new File(saveGamesDir.getPath() + "/saveGames.txt");
     static File tempDir = new File(gameDirectory.getPath() + "/temp");
     static File log = new File(tempDir.getPath() + "/log.txt");
 
     public static void main(String[] args) {
-        GameProgress gameProgress1 = new GameProgress(59, "AK", 10, 33.6);
-        GameProgress gameProgress2 = new GameProgress(80, "AKv1", 15, 70.6);
-        GameProgress gameProgress3 = new GameProgress(10, "AKv3", 44, 100);
-
         installGame();
 
-        saveGame(gameProgress1, saveGamesDoc.getPath());
-        saveGame(gameProgress2, saveGamesDoc.getPath());
-        saveGame(gameProgress3, saveGamesDoc.getPath());
+        List<GameProgress> gameProgresses = Arrays.asList(new GameProgress(59, "AK", 10, 33.6),
+                new GameProgress(80, "AKv1", 15, 70.6),
+                new GameProgress(10, "AKv3", 44, 100));
 
-        saveFileInZIP(saveGamesDoc);
+        for (int i = 0; i < gameProgresses.size(); i++) {
+            saveGame(gameProgresses.get(i), saveGamesDir.getPath() + "/saveGame" + i + ".txt");
+        }
+        List<String> saveGames = Arrays.asList(saveGamesDir.list());
+
+        saveFileInZIP(saveGamesDir.getPath() + "/saveGame.zip",saveGamesDir.getPath(), saveGames);
+
     }
 
-    public static void saveFileInZIP(File file) {
-        File file1 = new File(saveGamesDoc.getPath() + ".zip");
-        try (ZipOutputStream zipOutputStream = new ZipOutputStream(new FileOutputStream(file1));
-             FileInputStream fileInputStream = new FileInputStream(file)
+    public static void saveFileInZIP(String zipFile, String folderWithSaves, List<String> filesForArchiving) {
+        try (ZipOutputStream zipOutputStream = new ZipOutputStream(new FileOutputStream(zipFile));
+
         ) {
-            ZipEntry zipEntry = new ZipEntry(file.getPath());
-            zipOutputStream.putNextEntry(zipEntry);
+            for (String file : filesForArchiving) {
+                String pathAndFile = folderWithSaves +"/"+ file;
+                FileInputStream fileInputStream = new FileInputStream(pathAndFile);
+                ZipEntry zipEntry = new ZipEntry(pathAndFile);
+                byte[] buffer = new byte[fileInputStream.available()];
 
-            byte[] buffer = new byte[fileInputStream.available()];
-            fileInputStream.read(buffer);
-            zipOutputStream.write(buffer);
-            zipOutputStream.closeEntry();
-
+                zipOutputStream.putNextEntry(zipEntry);
+                fileInputStream.read(buffer);
+                zipOutputStream.write(buffer);
+                zipOutputStream.closeEntry();
+                fileInputStream.close();
+                deleteFile(pathAndFile);
+            }
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         } catch (IOException ioException) {
             ioException.printStackTrace();
         }
-        file.delete();
+
     }
 
     public static void saveGame(GameProgress gameProgress, String saveFile) {
         try (FileOutputStream fileOutputStream = new FileOutputStream(saveFile, true);
              ObjectOutputStream objectOutputStream = new ObjectOutputStream(fileOutputStream)) {
-            if (!saveGamesDoc.exists()) {
-                saveGamesDoc.createNewFile();
-            }
             objectOutputStream.writeObject(gameProgress);
 
         } catch (FileNotFoundException e) {
@@ -121,6 +125,15 @@ public class Main {
             } catch (IOException ioException) {
                 ioException.printStackTrace();
             }
+        }
+    }
+
+    static void deleteFile(String fileToDelete) {
+        File file = new File(fileToDelete);
+        if (!file.isDirectory()) {
+            file.delete();
+        } else {
+            System.out.println("Для удаления была выбрана пака а не файл");
         }
     }
 
