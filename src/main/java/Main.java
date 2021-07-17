@@ -32,9 +32,9 @@ public class Main {
 
         installGame();
 
-        saveGame(gameProgress1);
-        saveGame(gameProgress2);
-        saveGame(gameProgress3);
+        saveGame(gameProgress1, saveGamesDoc.getPath());
+        saveGame(gameProgress2, saveGamesDoc.getPath());
+        saveGame(gameProgress3, saveGamesDoc.getPath());
 
         saveFileInZIP(saveGamesDoc);
     }
@@ -42,7 +42,7 @@ public class Main {
     public static void saveFileInZIP(File file) {
         File file1 = new File(saveGamesDoc.getPath() + ".zip");
         try (ZipOutputStream zipOutputStream = new ZipOutputStream(new FileOutputStream(file1));
-        FileInputStream fileInputStream = new FileInputStream(file)
+             FileInputStream fileInputStream = new FileInputStream(file)
         ) {
             ZipEntry zipEntry = new ZipEntry(file.getPath());
             zipOutputStream.putNextEntry(zipEntry);
@@ -60,8 +60,8 @@ public class Main {
         file.delete();
     }
 
-    public static void saveGame(GameProgress gameProgress) {
-        try (FileOutputStream fileOutputStream = new FileOutputStream(saveGamesDoc, true);
+    public static void saveGame(GameProgress gameProgress, String saveFile) {
+        try (FileOutputStream fileOutputStream = new FileOutputStream(saveFile, true);
              ObjectOutputStream objectOutputStream = new ObjectOutputStream(fileOutputStream)) {
             if (!saveGamesDoc.exists()) {
                 saveGamesDoc.createNewFile();
